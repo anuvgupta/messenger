@@ -1,0 +1,552 @@
+    *
+
+// socket.io chat blockfile
+
+// define custom blocks
+!break
+    init
+        {
+            return Block('span').add('br');
+        }
+    load
+        {
+            data('val', function (val) {
+                for (var i = 1; i < val; i++)
+                    block.add('br');
+            });
+        }
+!text
+    init
+        {
+            return Block('span');
+        }
+    load
+        {
+            data('val', function (val) {
+                block.node().appendChild(document.createTextNode(val));
+            });
+            data('html', function (html) {
+                block.html(html);
+            });
+        }
+
+!image
+    init
+        {
+            return Block('div');
+        }
+    load
+        {
+            var src = data('src');
+            var height = data('height');
+            var width = data('width');
+            var alt = data('alt');
+            if (src != null) {
+                block.css('background-image', "url('" + src + "')")
+                    .css('background-repeat', 'no-repeat')
+                    .css('background-size', 'contain')
+                ;
+            }
+            if (height !== null) block.css('height', height);
+            else block.css('height', 'auto');
+            if (width !== null) block.css('width', width);
+            else block.css('width', 'auto');
+            if (alt !== null) block.attribute('title', alt);
+        }
+
+// app UI content layer
+app
+    css
+        height 100%
+        width 100%
+        margin 0
+        border none
+        opacity 0
+        transition opacity 0.2s ease
+    :login
+        {
+            block.child('login').css('opacity', '0');
+            setTimeout(function () {
+                block.child('login').css('display', 'none');
+            }, 410)
+        }
+    #invalid
+        {
+            if (invalid) {
+                block.child('login/name').css('animation', 'shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both');
+                setTimeout(function () {
+                    block.child('login/name').css('animation', '');
+                }, 820);
+                block.child('login/invalid').css('opacity', '1');
+            }
+        }
+    #name
+        {
+            block.child('chatroom/online/title/content/text').html('').data(name);
+        }
+    #online
+        {
+            block.child('chatroom/online/list').data({ online: online });
+        }
+    #newmsg
+        {
+            block.child('chatroom/room/msgs').data({ newmsg: newmsg });
+        }
+    #history
+        {
+            block.child('chatroom/room/msgs').data({ history: history });
+        }
+    :switch
+        {
+            block.child('chatroom/room/msgs/content').empty();
+            var name = 'Main Room';
+            var members = data.members;
+            if (data.chat != 'main') {
+                name = app.online[members[0] == app.id ? members[1] : members[0]];
+            }
+            block.child('chatroom/room/title/content/text').html('').data(name);
+            block.child('chatroom/room/msgs').key('lastID', '');
+        }
+    block login
+        css
+            position fixed
+            top 0
+            left 0
+            width 100%
+            height 100%
+            background-color white
+            opacity 1
+            transition opacity 0.4s ease
+            z-index 5
+        div logo
+            text text
+                val m
+            css
+                font-size 180px
+                color #555
+                font-weight 100
+        div name
+            css
+                margin-top -15px
+            input name
+                placeholder nickname
+                css
+                    width 200px
+                    height 30px
+                    font-size 20px
+                    padding 20px 20px
+                    background-color #eee
+                    border-radius 5px
+                    outline none
+                    border none
+                    text-align center
+                    color #444
+                :keyup
+                    {
+                        if (event.keyCode && event.keyCode == 13) {
+                            var name = block.node().value.trim();
+                            if (name != '') {
+                                app.sendName(name);
+                            }
+                        }
+                    }
+        div invalid
+            css
+                margin-top 6px
+                color rgba(183, 64, 64, 0.7)
+                font-size 12px
+                opacity 0
+                transition opacity 0.2s ease
+            text text
+                val name should be letters and numbers
+    div chatroom
+        css
+            width 100%
+            height 100%
+            position absolute
+            left 0
+            top 0
+            z-index 4
+        div online
+            css
+                position absolute
+                top 0
+                left 0
+                height 100%
+                border-right 1px solid #ddd
+                width 23%
+            div title
+                css
+                    position absolute
+                    z-index 3
+                    top 0
+                    left 0
+                    width 100%
+                    height 90px
+                    border-bottom 1px solid #ddd
+                    box-shadow 0 2px 4px #eee
+                    // background-color #f6f6f6
+                    background-color #494949
+                block content
+                    text text
+                        val Messages
+                    css
+                        font-size 30px
+                        // color #444
+                        color #f5f5f5
+                        letter-spacing 3px
+                        font-weight 400
+            div list
+                css
+                    position absolute
+                    z-index 2
+                    width 100%
+                    height 100%
+                    top 0
+                    left 0
+                #online
+                    {
+                        block.child('rest').html('');
+                        for (var id in online) {
+                            block.child('rest').add(
+                                Block('listed-user', id).data({ name: online[id] })
+                            );
+                        }
+                    }
+                div spacer
+                    css
+                        height 90px
+                !listed-user
+                    init
+                        {
+                            var block;
+                            block = Block('block')
+                                .css({
+                                    height: '30px',
+                                    padding: '23px 0 23px 40px',
+                                    borderBottom: '1px solid #eee',
+                                    cursor: 'pointer',
+                                    backgroundColor: 'white',
+                                    transition: 'background-color 0.3s ease'
+                                })
+                                .on('mouseover', function () {
+                                    block.css('background-color', '#f5f5f5');
+                                })
+                                .on('mouseout', function () {
+                                    block.css('background-color', 'white');
+                                })
+                                .__child('content')
+                                    .css('text-align', 'left')
+                                    .__parent()
+                                .add(Block('text', 1)
+                                    .data('Name')
+                                    .css({
+                                        fontSize: '18px',
+                                        color: '#444'
+                                    })
+                                )
+                                .on('click', function () {
+                                    if (block.mark() == 'main') {
+                                        app.openMain();
+                                    } else {
+                                        app.openDM([ app.id, block.mark() ]);
+                                    }
+                                })
+                            ;
+                            return block;
+                        }
+                    load
+                        {
+                            data('name', function (name) {
+                                block.child('text').html('').data(name);
+                            });
+                        }
+                listed-user main
+                    name Main Room
+                div rest
+                    css
+                        width 100%
+        div room
+            css
+                position absolute
+                top 0
+                left 23%
+                height 100%
+                width 77%
+            div title
+                css
+                    position absolute
+                    z-index 3
+                    top 0
+                    left 0
+                    width 100%
+                    height 90px
+                    border-bottom 1px solid #ddd
+                    box-shadow 0 2px 4px #eee
+                    // background-color #f6f6f6
+                    background-color #494949
+                block content
+                    text text
+                        val Main Room
+                    css
+                        font-size 30px
+                        // color #444
+                        letter-spacing 3px
+                        font-weight 400
+                        color #f5f5f5
+            div msgs
+                $lastID ...
+                css
+                    position absolute
+                    z-index 2
+                    width 100%
+                    height 100%
+                    top 0
+                    left 0
+                    overflow scroll
+                div spacer1
+                    css
+                        height 90px
+                div spacer2
+                    css
+                        height 20px
+                #newmsg
+                    {
+                        var content = block.child('content');
+                        if (newmsg[0] == app.id) {
+                            content.add(Block('right-text').data(newmsg[2]).data({ time: app.formatDate(newmsg[3] * 1000) }));
+                            block.key('lastID', 'null');
+                        } else {
+                            if (block.key('lastID') != newmsg[0]) {
+                                content.add(Block('left-name').data(newmsg[1]));
+                            }
+                            content.add(Block('left-text').data(newmsg[2]).data({ time: app.formatDate(newmsg[3] * 1000) }));
+                            block.key('lastID', newmsg[0]);
+                        }
+                        var $msgs = block.$();
+                        $msgs.scrollTop($msgs[0].scrollHeight);
+                    }
+                #history
+                    {
+                        for (var msg in history) {
+                            msg = history[msg];
+                            block.data({ newmsg: msg });
+                        }
+                    }
+                !left-name
+                    init
+                        {
+                            var block;
+                            block = Block('div')
+                                .css({
+                                    width: '100%',
+                                    height: 'auto',
+                                    padding: '10px 0 0 42px'
+                                })
+                                .add(Block('text', 1)
+                                    .css({
+                                        fontSize: '14px',
+                                        color: '#777',
+                                        letterSpacing: '0.5px'
+                                    })
+                                )
+                            ;
+                            return block;
+                        }
+                    load
+                        {
+                            data('val', function (val) {
+                                block.child('text').html('').data(val);
+                            });
+                        }
+                !left-text
+                    init
+                        {
+                            var block;
+                            block = Block('div')
+                                .css({
+                                    width: '100%',
+                                    // minHeight: '100px',
+                                    height: 'auto',
+                                    padding: '5px 30px 2px',
+                                    maxWidth: '400px'
+                                })
+                                .add(Block('block', 1)
+                                    .css({
+                                        backgroundColor: '#eaeaea',
+                                        height: '100%',
+                                        width: 'auto',
+                                        padding: '9px 17px',
+                                        borderRadius: '7px'
+                                    })
+                                    .__child('content')
+                                        .css('text-align', 'left')
+                                        .__parent()
+                                    .add(Block('text', 1)
+                                        .data('...')
+                                        .css({
+                                            color: '#555',
+                                            fontSize: '16px',
+                                            cursor: 'default'
+                                        })
+                                    )
+                                )
+                            ;
+                            return block;
+                        }
+                    load
+                        {
+                            data('val', function (val) {
+                                block.child('block/text').html('').data(val);
+                            });
+                            data('time', function (time) {
+                                block.child('block').attribute('title', time);
+                            });
+                        }
+                !right-name
+                    init
+                        {
+                            var block;
+                            block = Block('div')
+                                .css({
+                                    width: '100%',
+                                    height: 'auto',
+                                    padding: '5px 42px 0 0',
+                                    textAlign: 'right'
+                                })
+                                .add(Block('text', 1)
+                                    .css({
+                                        fontSize: '14px',
+                                        color: '#777',
+                                        letterSpacing: '0.5px'
+                                    })
+                                )
+                            ;
+                            return block;
+                        }
+                    load
+                        {
+                            data('val', function (val) {
+                                block.child('text').html('').data(val);
+                            });
+                        }
+                !right-text
+                    init
+                        {
+                            var block;
+                            block = Block('div')
+                                .css({
+                                    width: '100%',
+                                    // minHeight: '100px',
+                                    height: 'auto',
+                                    padding: '5px 30px 2px',
+                                    maxWidth: '400px',
+                                    margin: '0 0 0 auto'
+                                })
+                                .add(Block('block', 1)
+                                    .css({
+                                        backgroundColor: 'rgba(71, 134, 223, 0.95)',
+                                        height: '100%',
+                                        width: 'auto',
+                                        padding: '9px 17px',
+                                        borderRadius: '7px',
+                                        margin: '0 0 0 auto'
+                                    })
+                                    .__child('content')
+                                        .css('text-align', 'left')
+                                        .__parent()
+                                    .add(Block('text', 1)
+                                        .data('...')
+                                        .css({
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            cursor: 'default'
+                                        })
+                                    )
+                                )
+                            ;
+                            return block;
+                        }
+                    load
+                        {
+                            data('val', function (val) {
+                                block.child('block/text').html('').data(val);
+                            });
+                            data('time', function (time) {
+                                block.child('block').attribute('title', time);
+                            });
+                        }
+                div content
+                    css
+                        width 100%
+                div spacer3
+                    css
+                        height 80px
+            block sendbox
+                css
+                    position absolute
+                    bottom 0
+                    left 0
+                    height 65px
+                    border-top 1px solid #ddd
+                    margin-right 20px
+                    background-color white
+                    z-index 10
+                @query window height != 0
+                    {
+                        block.css('width', (block.parent().$().width() - 60) + 'px');
+                    }
+                input msginput
+                    css
+                        padding 5px
+                        font-size 20px
+                        width 90%
+                        outline none
+                        border none
+                        margin 0 auto 0 30px
+                        display block
+                        font-weight 300
+                    placeholder Type message...
+                    :keyup
+                        {
+                            if (event.keyCode && event.keyCode == 13) {
+                                block.parent().sibling('msgbutton').on('click');
+                            }
+                        }
+            block msgbutton
+                css
+                    height 65px
+                    width 60px
+                    display inline-table
+                    position absolute
+                    right 0
+                    bottom 0
+                    border-top 1px solid #ddd
+                    cursor pointer
+                    background-color white
+                    z-index 10
+                :mouseover
+                    {
+                        block.child('image').css('opacity', '0.8');
+                    }
+                :mouseout
+                    {
+                        block.child('image').css('opacity', '0.6');
+                    }
+                :click
+                    {
+                        var input_node = block.sibling('sendbox').child('msginput').node();
+                        var msg = input_node.value.trim();
+                        if (msg != '') {
+                            app.sendMsg(app.currentChat, msg);
+                            input_node.value = '';
+                        }
+                        input_node.focus();
+                    }
+                image image
+                    src arrow_up.png
+                    height 34px
+                    width 34px
+                    css
+                        opacity 0.6
+                        transition opacity 0.2s ease
