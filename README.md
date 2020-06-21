@@ -1,2 +1,7 @@
 # messenger
-Messenger-style chat app created with socket.io
+Basic messenger-style chat room app with socket.io.  
+
+
+
+&nbsp;  
+*2017*
