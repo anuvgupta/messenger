@@ -1,19 +1,42 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
     <head>
-        <meta charset="utf-8">
+        <meta charset="utf-8" />
         <title>Socket.io Chat</title>
         <script src="socket.io/socket.io.js"></script>
-        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"
+        ></script>
         <script src="block.js"></script>
         <style type="text/css">
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font: 13px Helvetica, Arial; }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font: 13px Helvetica, Arial;
+            }
             @keyframes shake {
-                10%, 90% { transform: translate3d(-1px, 0, 0); }
-                20%, 80% { transform: translate3d(2px, 0, 0); }
-                30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-                40%, 60% { transform: translate3d(4px, 0, 0); }
+                10%,
+                90% {
+                    transform: translate3d(-1px, 0, 0);
+                }
+                20%,
+                80% {
+                    transform: translate3d(2px, 0, 0);
+                }
+                30%,
+                50%,
+                70% {
+                    transform: translate3d(-4px, 0, 0);
+                }
+                40%,
+                60% {
+                    transform: translate3d(4px, 0, 0);
+                }
             }
         </style>
     </head>
@@ -28,9 +51,16 @@
                 onlineList: [],
                 currentChat: 'main',
                 init: function () {
-                    var socket = io('http://' + document.domain + ':3000/');
+                    var socket = io(
+                        (location.protocol === 'https:'
+                            ? 'https://'
+                            : 'http://') +
+                            document.domain +
+                            (location.protocol === 'https:' ? ':443' : ':80') +
+                            '/'
+                    );
                     socket.on('connect', function () {
-                        console.log('socket connected')
+                        console.log('socket connected');
                         app.id = socket.id;
                     });
                     socket.on('update online', function (online) {
@@ -46,19 +76,39 @@
                     });
                     socket.on('welcome', function () {
                         app.block.data({ name: app.name }).on('login');
-                        app.block.child('chatroom/online/list/main').on('click');
+                        app.block
+                            .child('chatroom/online/list/main')
+                            .on('click');
                     });
-                    socket.on('chat history', function (chat, members, history) {
+                    socket.on('chat history', function (
+                        chat,
+                        members,
+                        history
+                    ) {
                         history = JSON.parse(history);
                         console.log('history for chat ' + chat + ' recieved');
                         app.currentChat = chat;
-                        app.block.on('switch', { chat: chat, members: members })
+                        app.block
+                            .on('switch', { chat: chat, members: members })
                             .data({ history: history });
                     });
-                    socket.on('chat message', function (chat, user, name, msg, time) {
-                        console.log('message in chat ' + chat + ' – ' + name + ': ' + msg);
+                    socket.on('chat message', function (
+                        chat,
+                        user,
+                        name,
+                        msg,
+                        time
+                    ) {
+                        console.log(
+                            'message in chat ' +
+                                chat +
+                                ' – ' +
+                                name +
+                                ': ' +
+                                msg
+                        );
                         if (app.currentChat == chat)
-                            app.block.data({ newmsg: [ user, name, msg, time ] });
+                            app.block.data({ newmsg: [user, name, msg, time] });
                     });
                     app.socket = socket;
                 },
@@ -75,7 +125,20 @@
                 openDM: function (users) {
                     app.socket.emit('open direct', users);
                 },
-                months: [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ],
+                months: [
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'May',
+                    'Jun',
+                    'Jul',
+                    'Aug',
+                    'Sep',
+                    'Oct',
+                    'Nov',
+                    'Dec',
+                ],
                 formatDate: function (mtimestamp) {
                     var now = new Date(Date.now());
                     var date = new Date(mtimestamp);
@@ -110,22 +173,127 @@
                     dateF += hr + ':' + min + ':' + sec + ' ' + ampm;
                     return dateF;
                 },
-                sampleNames: [ 'makluk', 'manila', 'shaman', 'pinene', 'yeasty', 'gustav', 'eyelid', 'celure', 'assoil', 'brewis', 'nubium', 'mieres', 'crinal', 'having', 'museum', 'zapata', 'survey', 'hiemal', 'axseed', 'arnhem', 'buffer', 'azuela', 'sovran', 'quaich', 'spadix', 'gyrene', 'rutted', 'vinson', 'foully', 'kittie', 'gladly', 'vitria', 'pasted', 'belsen', 'sheath', 'vomito', 'yseult', 'format', 'meloid', 'scouse', 'mailed', 'timour', 'notchy', 'khatti', 'indian', 'holton', 'equine', 'admete', 'annats', 'eschar', 'nankin', 'pavese', 'vaward', 'cambia', 'rereel', 'dugout', 'cultus', 'berlin', 'rateen', 'really', 'rivage', 'antaea', 'assisi', 'pinner', 'snarer', 'saxony', 'bright', 'bombay', 'edvard', 'mollah', 'sylphy', 'abused', 'marron', 'ladino', 'hamlet', 'bettor', 'fuhrer', 'thomas', 'awless', 'otaken', 'ecclus', 'votary', 'daneen', 'iambic', 'sphene', 'graeae', 'fouter', 'axlike', 'speech', 'when', 'hutted', 'florin', 'haslet', 'ripper', 'retune', 'puppet', 'malady', 'duplex', 'kuvasz', 'chigoe' ]
+                sampleNames: [
+                    'makluk',
+                    'manila',
+                    'shaman',
+                    'pinene',
+                    'yeasty',
+                    'gustav',
+                    'eyelid',
+                    'celure',
+                    'assoil',
+                    'brewis',
+                    'nubium',
+                    'mieres',
+                    'crinal',
+                    'having',
+                    'museum',
+                    'zapata',
+                    'survey',
+                    'hiemal',
+                    'axseed',
+                    'arnhem',
+                    'buffer',
+                    'azuela',
+                    'sovran',
+                    'quaich',
+                    'spadix',
+                    'gyrene',
+                    'rutted',
+                    'vinson',
+                    'foully',
+                    'kittie',
+                    'gladly',
+                    'vitria',
+                    'pasted',
+                    'belsen',
+                    'sheath',
+                    'vomito',
+                    'yseult',
+                    'format',
+                    'meloid',
+                    'scouse',
+                    'mailed',
+                    'timour',
+                    'notchy',
+                    'khatti',
+                    'indian',
+                    'holton',
+                    'equine',
+                    'admete',
+                    'annats',
+                    'eschar',
+                    'nankin',
+                    'pavese',
+                    'vaward',
+                    'cambia',
+                    'rereel',
+                    'dugout',
+                    'cultus',
+                    'berlin',
+                    'rateen',
+                    'really',
+                    'rivage',
+                    'antaea',
+                    'assisi',
+                    'pinner',
+                    'snarer',
+                    'saxony',
+                    'bright',
+                    'bombay',
+                    'edvard',
+                    'mollah',
+                    'sylphy',
+                    'abused',
+                    'marron',
+                    'ladino',
+                    'hamlet',
+                    'bettor',
+                    'fuhrer',
+                    'thomas',
+                    'awless',
+                    'otaken',
+                    'ecclus',
+                    'votary',
+                    'daneen',
+                    'iambic',
+                    'sphene',
+                    'graeae',
+                    'fouter',
+                    'axlike',
+                    'speech',
+                    'when',
+                    'hutted',
+                    'florin',
+                    'haslet',
+                    'ripper',
+                    'retune',
+                    'puppet',
+                    'malady',
+                    'duplex',
+                    'kuvasz',
+                    'chigoe',
+                ],
             };
             $(document).ready(function () {
                 setTimeout(function () {
-                    app.block.load(function (block) {
-                        block.fill(document.body);
-                        app.init();
-                        setTimeout(function () {
-                            block.css('transition', 'opacity 0.5s ease');
-                            block.css('opacity', '1');
-                        }, 20);
-                        Block.queries();
+                    app.block.load(
+                        function (block) {
+                            block.fill(document.body);
+                            app.init();
+                            setTimeout(function () {
+                                block.css('transition', 'opacity 0.5s ease');
+                                block.css('opacity', '1');
+                            }, 20);
+                            Block.queries();
 
-                        // app.sendName('anuv' + String((new Date()).getTime()).substring(6) );
-                        // app.sendName(app.sampleNames[parseInt((Math.random() * 100))]);
-                    }, 'app', 'jQuery');
+                            // app.sendName('anuv' + String((new Date()).getTime()).substring(6) );
+                            // app.sendName(app.sampleNames[parseInt((Math.random() * 100))]);
+                        },
+                        'app',
+                        'jQuery'
+                    );
                 }, 100);
             });
         </script>
